@@ -1,0 +1,11 @@
+{:itonami.blueprint/id "cloud-itonami-6420"
+ :itonami.blueprint/name "Activities of holding companies"
+ :itonami.blueprint/isic-rev5 "6420"
+ :itonami.blueprint/domain :finance/holding-company
+ :itonami.blueprint/license "AGPL-3.0-or-later"
+ :itonami.blueprint/social-impact [:financial-inclusion :data-sovereignty :transparency]
+ :itonami.blueprint/governor :holding-structure-governor
+ :itonami.blueprint/required-technologies [:robotics :identity :forms :dmn :bpmn :audit-ledger :securities]
+ :itonami.blueprint/optional-technologies []
+ :itonami.blueprint/status :public-oss
+ :itonami.blueprint/robotics true}
