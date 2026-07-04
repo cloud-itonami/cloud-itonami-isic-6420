@@ -2,7 +2,7 @@
 
 ## Classification
 
-- Repository: `cloud-itonami-6420`
+- Repository: `cloud-itonami-isic-6420`
 - ISIC Rev.5: `6420`
 - Activity: holding-company administration -- owning and managing controlling equity interests in subsidiary companies without engaging in their operations
 - Social impact: financial inclusion, data sovereignty, transparent audit

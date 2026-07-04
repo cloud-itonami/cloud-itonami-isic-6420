@@ -1,4 +1,4 @@
-{:itonami.blueprint/id "cloud-itonami-6420"
+{:itonami.blueprint/id "cloud-itonami-isic-6420"
  :itonami.blueprint/name "Activities of holding companies"
  :itonami.blueprint/isic-rev5 "6420"
  :itonami.blueprint/domain :finance/holding-company

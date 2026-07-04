@@ -1,4 +1,4 @@
-# cloud-itonami-6420
+# cloud-itonami-isic-6420
 
 Open Business Blueprint for **ISIC Rev.5 6420**: Activities of holding companies.
 

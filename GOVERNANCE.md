@@ -1,6 +1,6 @@
 # Governance
 
-`cloud-itonami-6420` is an OSS open-business blueprint for holding-company administration -- owning and managing controlling equity interests in subsidiary companies without engaging in their operations.
+`cloud-itonami-isic-6420` is an OSS open-business blueprint for holding-company administration -- owning and managing controlling equity interests in subsidiary companies without engaging in their operations.
 Governance covers both the capability layer and the operator model.
 
 ## Maintainers
