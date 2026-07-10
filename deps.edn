@@ -7,7 +7,15 @@
  ;; paths only resolve inside the monorepo checkout — a standalone fork
  ;; should override them with git coordinates.
  :deps {io.github.kotoba-lang/langgraph
-        {:local/root "../../kotoba-lang/langgraph"}}
+        {:local/root "../../kotoba-lang/langgraph"}
+        ;; optional: holdco.corporate-intel's cross-reference into
+        ;; cloud-itonami-isic-8291's :disclosure/ownership-chain op
+        ;; (ADR-2607110400 addendum 4). Only holdco.corporate-intel itself
+        ;; requires `dossier.*` -- holdcoadvisor/operation/governor have
+        ;; zero compile-time dependency on it (the ownership-chain-fn is
+        ;; plain-injected).
+        io.github.cloud-itonami/cloud-itonami-isic-8291
+        {:local/root "../cloud-itonami-isic-8291"}}
  :aliases
  {;; offline workspace dev -- pin transitive langchain to local checkout
   :dev {:override-deps

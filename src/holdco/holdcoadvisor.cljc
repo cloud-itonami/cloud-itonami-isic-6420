@@ -77,12 +77,25 @@
        :stake      nil
        :confidence 0.9})))
 
+(def default-corporate-intel-ownership-chain
+  "No-op corporate-intelligence cross-reference: always 'nothing on file'.
+  Default so every existing caller of `screen-beneficial-ownership`/`infer`/
+  `mock-advisor` keeps its exact prior behavior unless it explicitly wires
+  in `holdco.corporate-intel/ownership-chain` (or an equivalent)."
+  (constantly {:has-sourced-ownership-data? false :owners []}))
+
 (defn- screen-beneficial-ownership
   "Beneficial-ownership-verification screening draft.
   `:beneficial-ownership-verified?` on the position record injects
   the failure mode: the Holding Structure Governor must HOLD, un-
-  overridably, on any unverified status."
-  [db {:keys [subject]}]
+  overridably, on any unverified status.
+
+  `ownership-chain-fn` (subsidiary name -> corporate-intel ownership-chain
+  result, see `holdco.corporate-intel/ownership-chain`) is consulted ONLY
+  once the position is not already locally unverified -- it can turn a
+  would-be verified verdict into unverified (never the reverse), the same
+  discipline `formation.registrarllm/screen-kyc`'s `screen-fn` uses."
+  [db {:keys [subject]} ownership-chain-fn]
   (let [p (store/position db subject)]
     (cond
       (nil? p)
@@ -100,13 +113,37 @@
        :confidence 0.95}
 
       :else
-      {:summary    (str (:subsidiary-name p) ": 実質的支配者情報は確認済み")
-       :rationale  "実質的支配者確認完了。"
-       :cites      [:beneficial-ownership-check]
-       :effect     :beneficial-ownership/set
-       :value      {:position-id subject :beneficial-ownership-verified? true}
-       :stake      nil
-       :confidence 0.9})))
+      (let [oc (ownership-chain-fn (:subsidiary-name p))]
+        (cond
+          (:pending-human-review? oc)
+          {:summary    (str (:subsidiary-name p) ": corporate-intelligence 照会が人手レビュー待ち")
+           :rationale  "cloud-itonami-isic-8291 側の DisclosureGovernor が high-stakes escalate 中。確定するまで確認済みにできない。"
+           :cites      [:beneficial-ownership-check :corporate-intelligence]
+           :effect     :beneficial-ownership/set
+           :value      {:position-id subject :beneficial-ownership-verified? false}
+           :stake      nil
+           :confidence 0.5}
+
+          (:held? oc)
+          {:summary    (str (:subsidiary-name p) ": corporate-intelligence 照会が拒否された(契約/設定の問題)")
+           :rationale  (str "cloud-itonami-isic-8291 の DisclosureGovernor が本テナントの照会を拒否: " (pr-str (:reason oc)))
+           :cites      [:beneficial-ownership-check :corporate-intelligence]
+           :effect     :beneficial-ownership/set
+           :value      {:position-id subject :beneficial-ownership-verified? false}
+           :stake      nil
+           :confidence 0.4}
+
+          :else
+          {:summary    (str (:subsidiary-name p) ": 実質的支配者情報は確認済み")
+           :rationale  (str "実質的支配者確認完了。"
+                           (if (:has-sourced-ownership-data? oc)
+                             "corporate-intelligence の所有関係チェーンと整合。"
+                             "corporate-intelligence に出典データなし(所有者なしを意味しない、単に未収載)。"))
+           :cites      [:beneficial-ownership-check :corporate-intelligence]
+           :effect     :beneficial-ownership/set
+           :value      {:position-id subject :beneficial-ownership-verified? true}
+           :stake      nil
+           :confidence 0.9})))))
 
 (defn- propose-distribution-disbursement
   "Draft the actual DISTRIBUTION-DISBURSEMENT action -- disbursing a
@@ -153,16 +190,20 @@
 
 (defn infer
   "Route a request to the right proposal generator.
-  request: {:op kw :subject id ...op-specific...}"
-  [db {:keys [op] :as request}]
-  (case op
-    :position/intake                      (normalize-intake db request)
-    :disclosure/verify                    (verify-disclosure db request)
-    :beneficial-ownership/screen          (screen-beneficial-ownership db request)
-    :actuation/disburse-distribution      (propose-distribution-disbursement db request)
-    :actuation/record-ownership-change    (propose-ownership-change db request)
-    {:summary "未対応の操作" :rationale (str op) :cites []
-     :effect :noop :stake nil :confidence 0.0}))
+  request: {:op kw :subject id ...op-specific...}
+  `ownership-chain-fn` (default: `default-corporate-intel-ownership-chain`,
+  a no-op) is only consulted by `:beneficial-ownership/screen`, once the
+  position is not already locally unverified."
+  ([db request] (infer db request default-corporate-intel-ownership-chain))
+  ([db {:keys [op] :as request} ownership-chain-fn]
+   (case op
+     :position/intake                      (normalize-intake db request)
+     :disclosure/verify                    (verify-disclosure db request)
+     :beneficial-ownership/screen          (screen-beneficial-ownership db request ownership-chain-fn)
+     :actuation/disburse-distribution      (propose-distribution-disbursement db request)
+     :actuation/record-ownership-change    (propose-ownership-change db request)
+     {:summary "未対応の操作" :rationale (str op) :cites []
+      :effect :noop :stake nil :confidence 0.0})))
 
 ;; ----------------------------- Advisor protocol -----------------------------
 
@@ -170,8 +211,17 @@
   (-advise [advisor store request] "store + request -> proposal map"))
 
 (defn mock-advisor
-  "The deterministic advisor (the `infer` logic above). Default everywhere."
-  [] (reify Advisor (-advise [_ st req] (infer st req))))
+  "The deterministic advisor (the `infer` logic above). Default everywhere.
+  opts:
+    :corporate-intel-ownership-chain -- subsidiary name -> corporate-intel
+      ownership-chain result (see `holdco.corporate-intel/ownership-chain`).
+      Default: no-op (never changes a screen-beneficial-ownership verdict),
+      so `(mock-advisor)` with no args keeps every existing caller's exact
+      prior behavior."
+  ([] (mock-advisor {}))
+  ([{:keys [corporate-intel-ownership-chain]
+     :or   {corporate-intel-ownership-chain default-corporate-intel-ownership-chain}}]
+   (reify Advisor (-advise [_ st req] (infer st req corporate-intel-ownership-chain)))))
 
 (def ^:private system-prompt
   (str "あなたは持株会社管理事業の分配実施・持株構成変更記録エージェントの"

@@ -23,7 +23,7 @@
       (is (false? (:beneficial-ownership-verified? (store/position s "position-4"))))
       (is (false? (:distribution-disbursed? (store/position s "position-1"))))
       (is (false? (:ownership-change-recorded? (store/position s "position-1"))))
-      (is (= ["position-1" "position-2" "position-3" "position-4"]
+      (is (= ["position-1" "position-2" "position-3" "position-4" "position-5"]
              (mapv :id (store/all-positions s))))
       (is (nil? (store/beneficial-ownership-of s "position-1")))
       (is (nil? (store/disclosure-of s "position-1")))

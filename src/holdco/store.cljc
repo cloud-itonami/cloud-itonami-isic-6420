@@ -81,6 +81,20 @@
                   :proposed-distribution-amount 500000 :distributable-reserves 2000000
                   :beneficial-ownership-verified? false
                   :distribution-disbursed? false :ownership-change-recorded? false
+                  :jurisdiction "JPN" :status :intake}
+    ;; position-5: locally marked verified, but its :subsidiary-name is an
+    ;; EXACT match for cloud-itonami-isic-8291's own demo company co-300's
+    ;; legal name. Per 8291's sourced relationship-graph data (`dossier.
+    ;; store/demo-data`), co-300's real owner is the sanctions-flagged
+    ;; co-200 at 60% -- a fact this position's self-declared
+    ;; :beneficial-ownership-verified? true never surfaces on its own.
+    ;; Exists purely to prove `holdco.corporate-intel/ownership-chain`'s
+    ;; cross-reference catches what local-only verification alone would
+    ;; miss (see test/holdco/corporate_intel_test.clj).
+    "position-5" {:id "position-5" :subsidiary-name "出島サブシディアリ株式会社(デモ)"
+                  :proposed-distribution-amount 500000 :distributable-reserves 2000000
+                  :beneficial-ownership-verified? true
+                  :distribution-disbursed? false :ownership-change-recorded? false
                   :jurisdiction "JPN" :status :intake}}})
 
 ;; ----------------------------- shared commit logic -----------------------------
