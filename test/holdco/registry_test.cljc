@@ -36,9 +36,9 @@
     (is (= (get-in result ["record" "immutable"]) true))))
 
 (deftest disbursement-validation-rules
-  (is (thrown? Exception (r/register-distribution-disbursement "" "JPN" 0)))
-  (is (thrown? Exception (r/register-distribution-disbursement "position-1" "" 0)))
-  (is (thrown? Exception (r/register-distribution-disbursement "position-1" "JPN" -1))))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-distribution-disbursement "" "JPN" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-distribution-disbursement "position-1" "" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-distribution-disbursement "position-1" "JPN" -1))))
 
 ;; ----------------------------- register-ownership-change -----------------------------
 
@@ -56,9 +56,9 @@
     (is (= (get-in result ["record" "immutable"]) true))))
 
 (deftest change-validation-rules
-  (is (thrown? Exception (r/register-ownership-change "" "JPN" 0)))
-  (is (thrown? Exception (r/register-ownership-change "position-1" "" 0)))
-  (is (thrown? Exception (r/register-ownership-change "position-1" "JPN" -1))))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-ownership-change "" "JPN" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-ownership-change "position-1" "" 0)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) (r/register-ownership-change "position-1" "JPN" -1))))
 
 (deftest history-is-append-only
   (let [c1 (r/register-distribution-disbursement "position-1" "JPN" 0)
