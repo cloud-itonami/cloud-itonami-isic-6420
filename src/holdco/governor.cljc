@@ -113,10 +113,16 @@
   governor's guards establish, informed by `cloud-itonami-isic-6492`'s
   status-lifecycle bug (ADR-2607071320)."
   (:require [holdco.facts :as facts]
+            [holdco.kernels.gate :as gate]
             [holdco.registry :as registry]
             [holdco.store :as store]))
 
-(def confidence-floor 0.6)
+(def confidence-floor
+  "Documented threshold. The DECIDING copy is
+  `holdco.kernels.gate/confidence-floor-x100` (integer x100 in the
+  safety kernel); this def is kept for callers/docs and pinned equal
+  by `holdco.kernels.gate-test`."
+  0.6)
 
 (def high-stakes
   "Stakes grave enough to always require a human, even when clean.
@@ -127,6 +133,12 @@
   finalizing a real record), matching this fleet's majority actuation
   shape (3600/6190 remain the only negative-actuation exceptions)."
   #{:actuation/disburse-distribution :actuation/record-ownership-change})
+
+(defn- confidence->x100
+  "Host bridge (façade-side, not kernel vocabulary): scale a 0.0..1.0
+  advisor confidence to the kernel's integer x100 wire code."
+  [c]
+  (Math/round (* 100.0 (double c))))
 
 ;; ----------------------------- checks -----------------------------
 
@@ -215,22 +227,50 @@
   {:ok? bool :violations [..] :confidence c :escalate? bool
   :high-stakes? bool :hard? bool}."
   [request _context proposal st]
-  (let [hard (into []
-                   (concat (spec-basis-violations request proposal)
-                           (evidence-incomplete-violations request st)
-                           (distribution-exceeds-distributable-reserves-violations request st)
-                           (beneficial-ownership-verification-unresolved-violations request proposal st)
-                           (already-disbursed-violations request st)
-                           (already-recorded-violations request st)))
+  (let [spec-v (spec-basis-violations request proposal)
+        evid-v (evidence-incomplete-violations request st)
+        dist-v (distribution-exceeds-distributable-reserves-violations request st)
+        bo-v   (beneficial-ownership-verification-unresolved-violations request proposal st)
+        disb-v (already-disbursed-violations request st)
+        rec-v  (already-recorded-violations request st)
+        hard (into [] (concat spec-v evid-v dist-v bo-v disb-v rec-v))
         conf (:confidence proposal 0.0)
-        low? (< conf confidence-floor)
         stakes? (boolean (high-stakes (:stake proposal)))
-        hard? (boolean (seq hard))]
-    {:ok?          (and (not hard?) (not low?) (not stakes?))
+        ;; Numeric bridge: the kernel re-decides the distributable-
+        ;; reserves ceiling from the position's raw integer fields
+        ;; (exceeds iff reserves < amount — the EXACT strict comparison
+        ;; `holdco.registry/distribution-amount-exceeds-distributable-
+        ;; reserves?` makes, on the same values, so kernel and
+        ;; violation list can never disagree). The `applicable` flag
+        ;; restates the registry's op scoping AND its `number?` guard
+        ;; (a missing field is no-violation, exactly as before).
+        dist-op? (= (:op request) :actuation/disburse-distribution)
+        p (when dist-op? (store/position st (:subject request)))
+        dist? (and dist-op?
+                   (number? (:proposed-distribution-amount p))
+                   (number? (:distributable-reserves p)))
+        ;; The decision itself is delegated to the safety kernel
+        ;; (holdco.kernels.gate, integer-coded fail-closed core); this
+        ;; façade only gathers evidence (violation lists with
+        ;; human-readable details) and maps codes back to keywords.
+        ;; Kernel is stricter than the old inline logic on ONE case by
+        ;; design: an out-of-range confidence (< 0 or > 1.0) now
+        ;; escalates instead of counting as high confidence.
+        code (gate/verdict-code (if (seq spec-v) 1 0)
+                                (if (seq evid-v) 1 0)
+                                (if dist? 1 0)
+                                (if dist? (:proposed-distribution-amount p) 0)
+                                (if dist? (:distributable-reserves p) 0)
+                                (if (seq bo-v) 1 0)
+                                (if (seq disb-v) 1 0)
+                                (if (seq rec-v) 1 0)
+                                (confidence->x100 conf)
+                                (if stakes? 1 0))]
+    {:ok?          (= 0 code)
      :violations   hard
      :confidence   conf
-     :hard?        hard?
-     :escalate?    (and (not hard?) (or low? stakes?))
+     :hard?        (= 2 code)
+     :escalate?    (= 1 code)
      :high-stakes? stakes?}))
 
 (defn hold-fact
