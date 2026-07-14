@@ -225,6 +225,7 @@ scaffold this narrow in scope.
 | `src/holdco/operation.cljc` | **OperationActor** -- langgraph-clj StateGraph |
 | `src/holdco/sim.cljc` | demo driver |
 | `test/holdco/*_test.clj` | governor contract · phase invariants · store parity · registry conformance · facts coverage |
+| `wasm/distributable_reserves.kotoba` | PoC: a WASM-compiled (`kotoba-lang/kotoba` -> `kotoba-lang/kototama`'s `actor:host` ABI) port of `registry.cljc`'s `distribution-amount-exceeds-distributable-reserves?` pure comparison -- see `wasm/README.md` for scope, the input/output ABI, and what's out of scope (Store, the position lookup, the StateGraph) |
 
 ## Business-process coverage (honest)
 
