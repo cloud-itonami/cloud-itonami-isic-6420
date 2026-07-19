@@ -1,0 +1,71 @@
+<html><head><meta charset="utf-8"><title>cloud-itonami-isic-6420 &middot; activities of holding companies</title><style>
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ok { color: #137a3f; }
+body { font-family: system-ui,-apple-system,sans-serif; margin: 0; color: #1a1a1a; background: #fafafa; }
+header.bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e5e5e5; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+h2 { margin-top: 0; font-size: 15px; }
+.warn { color: #b25c00; background: #fff8e1; padding: 2px 6px; border-radius: 4px; }
+main { max-width: 980px; margin: 24px auto; padding: 0 20px; }
+header.bar h1 { font-size: 18px; margin: 0; font-weight: 600; }
+.muted { color: #888; font-size: 13px; }
+.critical { color: #fff; background: #b3261e; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.err { color: #b3261e; background: #fbe9e7; padding: 2px 6px; border-radius: 4px; }
+th { font-weight: 600; color: #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+header.bar .badge { margin-left: auto; font-size: 12px; color: #666; }
+code { font-size: 12px; background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+</style></head><body>
+<header class="bar">
+  <h1>Activities of holding companies (ISIC 6420) — Operator Console</h1>
+  <span class="badge">read-only sample · governor-gated · distribution disbursement and ownership-change recording always human-approved</span>
+</header>
+<main>
+  <section class="card">
+    <h2>Positions</h2>
+    <p class="muted">Demo snapshot — build-time-generated from <code>holdco.store</code> via <code>holdco.render-html</code> (<code>clojure -M:dev:render-html</code>), regenerated nightly.</p>
+    <table>
+      <thead><tr><th>Position</th><th>Subsidiary</th><th>Jurisdiction</th><th>Proposed distribution / Distributable reserves</th><th>Beneficial ownership</th><th>Last op status</th></tr></thead>
+      <tbody>
+        <tr><td>position-1</td><td>Sato Holdings K.K.</td><td>JPN</td><td>500000 / 2000000</td><td><span class="ok">verified</span></td><td><span class="ok">committed</span></td></tr>
+        <tr><td>position-2</td><td>Atlantis Holdings</td><td>ATL</td><td>500000 / 2000000</td><td><span class="ok">verified</span></td><td><span class="critical">HARD hold &middot; no-spec-basis</span></td></tr>
+        <tr><td>position-3</td><td>鈴木ホールディングス</td><td>JPN</td><td>3000000 / 2000000</td><td><span class="ok">verified</span></td><td><span class="critical">HARD hold &middot; distribution-exceeds-distributable-reserves</span></td></tr>
+        <tr><td>position-4</td><td>田中ホールディングス</td><td>JPN</td><td>500000 / 2000000</td><td><span class="warn">unverified</span></td><td><span class="critical">HARD hold &middot; beneficial-ownership-verification-unresolved</span></td></tr>
+        <tr><td>position-5</td><td>出島サブシディアリ株式会社(デモ)</td><td>JPN</td><td>500000 / 2000000</td><td><span class="ok">verified</span></td><td><span class="muted">no activity</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="card">
+    <h2>Action gate (Holding Structure Governor)</h2>
+    <p class="muted">HARD holds cannot be overridden. Distribution amounts are independently recomputed against each position's own distributable reserves, never trusted from the proposal; beneficial-ownership verification is checked unconditionally, on every op that touches a position.</p>
+    <table>
+      <thead><tr><th>Op</th><th>Gate</th></tr></thead>
+      <tbody>
+        <tr><td><code>:position/intake</code></td><td><span class="ok">auto-commit when clean at phase 3 -- no direct capital risk</span></td></tr>
+        <tr><td><code>:disclosure/verify</code></td><td><span class="warn">ALWAYS human approval &middot; spec-basis must cite an official jurisdiction source</span></td></tr>
+        <tr><td><code>:beneficial-ownership/screen</code></td><td><span class="warn">ALWAYS human approval when clean &middot; HARD-holds un-overridably on an unresolved status</span></td></tr>
+        <tr><td><code>:actuation/disburse-distribution</code></td><td><span class="warn">ALWAYS human approval, no phase ever auto-commits &middot; distributable-reserves independently recomputed &middot; double-disbursement blocked</span></td></tr>
+        <tr><td><code>:actuation/record-ownership-change</code></td><td><span class="warn">ALWAYS human approval, no phase ever auto-commits &middot; double-recording blocked</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="card">
+    <h2>Audit ledger (this run)</h2>
+    <p class="muted">Append-only decision-fact log — every proposal, hold and commit this scenario produced.</p>
+    <table>
+      <thead><tr><th>Fact</th><th>Op</th><th>Subject</th><th>Basis</th></tr></thead>
+      <tbody>
+        <tr><td>committed</td><td><code>position/intake</code></td><td>position-1</td><td>id, subsidiary-name</td></tr>
+        <tr><td>committed</td><td><code>disclosure/verify</code></td><td>position-1</td><td>会社法 (Companies Act, Act No. 86 of 2005) 第461条 (剰余金の分配可能額), https://www.moj.go.jp/MINJI/minji06_00023.html</td></tr>
+        <tr><td>committed</td><td><code>beneficial-ownership/screen</code></td><td>position-1</td><td>beneficial-ownership-check, corporate-intelligence</td></tr>
+        <tr><td>committed</td><td><code>actuation/disburse-distribution</code></td><td>position-1</td><td>position-1</td></tr>
+        <tr><td>committed</td><td><code>actuation/record-ownership-change</code></td><td>position-1</td><td>position-1</td></tr>
+        <tr><td>governor-hold</td><td><code>disclosure/verify</code></td><td>position-2</td><td>no-spec-basis</td></tr>
+        <tr><td>committed</td><td><code>disclosure/verify</code></td><td>position-3</td><td>会社法 (Companies Act, Act No. 86 of 2005) 第461条 (剰余金の分配可能額), https://www.moj.go.jp/MINJI/minji06_00023.html</td></tr>
+        <tr><td>governor-hold</td><td><code>actuation/disburse-distribution</code></td><td>position-3</td><td>distribution-exceeds-distributable-reserves</td></tr>
+        <tr><td>governor-hold</td><td><code>beneficial-ownership/screen</code></td><td>position-4</td><td>beneficial-ownership-verification-unresolved</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body></html>
