@@ -33,10 +33,9 @@
   services provider trusting a holding-company administrator needs,
   and the evidence an operator needs if a disbursement or ownership-
   change decision is later disputed."
-  (:require #?(:clj  [clojure.edn :as edn]
-               :cljs [cljs.reader :as edn])
-            [holdco.registry :as registry]
-            [langchain.db :as d]))
+  (:require [holdco.registry :as registry]
+            [langchain.db :as d]
+            [langchain-store.core :as ls]))
 
 (defprotocol Store
   (position [s id])
@@ -191,18 +190,15 @@
   Compound values (disclosure/beneficial-ownership payloads, ledger
   facts, distribution/ownership-change records) are stored as EDN
   strings so `langchain.db` doesn't expand them into sub-entities --
-  the same convention every sibling actor's store uses."
-  {:position/id                              {:db/unique :db.unique/identity}
-   :disclosure/position-id                   {:db/unique :db.unique/identity}
-   :beneficial-ownership/position-id         {:db/unique :db.unique/identity}
-   :ledger/seq                               {:db/unique :db.unique/identity}
-   :distribution/seq                         {:db/unique :db.unique/identity}
-   :ownership-change/seq                     {:db/unique :db.unique/identity}
-   :distribution-sequence/jurisdiction       {:db/unique :db.unique/identity}
-   :ownership-change-sequence/jurisdiction   {:db/unique :db.unique/identity}})
-
-(defn- enc [v] (pr-str v))
-(defn- dec* [s] (when s (edn/read-string s)))
+  the same convention every sibling actor's store uses. The identity-
+  schema builder, EDN-blob codec and seq-keyed event-log read/append
+  are the shared kotoba-lang/langchain-store machinery
+  (ADR-2607141600) -- the seam ~190 actors hand-roll; this store keeps
+  only its domain wiring."
+  (ls/identity-schema
+   [:position/id :disclosure/position-id :beneficial-ownership/position-id
+    :ledger/seq :distribution/seq :ownership-change/seq
+    :distribution-sequence/jurisdiction :ownership-change-sequence/jurisdiction]))
 
 (defn- position->tx [{:keys [id subsidiary-name proposed-distribution-amount distributable-reserves
                              beneficial-ownership-verified?
@@ -246,25 +242,16 @@
          (map #(pull->position (d/pull (d/db conn) position-pull [:position/id %])))
          (sort-by :id)))
   (beneficial-ownership-of [_ id]
-    (dec* (d/q '[:find ?p . :in $ ?pid
+    (ls/dec* (d/q '[:find ?p . :in $ ?pid
                 :where [?k :beneficial-ownership/position-id ?pid] [?k :beneficial-ownership/payload ?p]]
               (d/db conn) id)))
   (disclosure-of [_ position-id]
-    (dec* (d/q '[:find ?p . :in $ ?pid
+    (ls/dec* (d/q '[:find ?p . :in $ ?pid
                 :where [?a :disclosure/position-id ?pid] [?a :disclosure/payload ?p]]
               (d/db conn) position-id)))
-  (ledger [_]
-    (->> (d/q '[:find ?s ?f :where [?e :ledger/seq ?s] [?e :ledger/fact ?f]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
-  (distribution-history [_]
-    (->> (d/q '[:find ?s ?r :where [?e :distribution/seq ?s] [?e :distribution/record ?r]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
-  (ownership-change-history [_]
-    (->> (d/q '[:find ?s ?r :where [?e :ownership-change/seq ?s] [?e :ownership-change/record ?r]] (d/db conn))
-         (sort-by first)
-         (mapv (comp dec* second))))
+  (ledger [_] (ls/read-stream conn :ledger/seq :ledger/fact))
+  (distribution-history [_] (ls/read-stream conn :distribution/seq :distribution/record))
+  (ownership-change-history [_] (ls/read-stream conn :ownership-change/seq :ownership-change/record))
   (next-distribution-sequence [_ jurisdiction]
     (or (d/q '[:find ?n . :in $ ?j
               :where [?e :distribution-sequence/jurisdiction ?j] [?e :distribution-sequence/next ?n]]
@@ -285,10 +272,10 @@
       (d/transact! conn [(position->tx value)])
 
       :disclosure/set
-      (d/transact! conn [{:disclosure/position-id (first path) :disclosure/payload (enc payload)}])
+      (d/transact! conn [{:disclosure/position-id (first path) :disclosure/payload (ls/enc payload)}])
 
       :beneficial-ownership/set
-      (d/transact! conn [{:beneficial-ownership/position-id (first path) :beneficial-ownership/payload (enc payload)}])
+      (d/transact! conn [{:beneficial-ownership/position-id (first path) :beneficial-ownership/payload (ls/enc payload)}])
 
       :position/mark-disbursed
       (let [position-id (first path)
@@ -298,7 +285,7 @@
         (d/transact! conn
                      [(position->tx (assoc position-patch :id position-id))
                       {:distribution-sequence/jurisdiction jurisdiction :distribution-sequence/next next-n}
-                      {:distribution/seq (count (distribution-history s)) :distribution/record (enc (get result "record"))}])
+                      {:distribution/seq (count (distribution-history s)) :distribution/record (ls/enc (get result "record"))}])
         result)
 
       :position/mark-recorded
@@ -309,12 +296,12 @@
         (d/transact! conn
                      [(position->tx (assoc position-patch :id position-id))
                       {:ownership-change-sequence/jurisdiction jurisdiction :ownership-change-sequence/next next-n}
-                      {:ownership-change/seq (count (ownership-change-history s)) :ownership-change/record (enc (get result "record"))}])
+                      {:ownership-change/seq (count (ownership-change-history s)) :ownership-change/record (ls/enc (get result "record"))}])
         result)
       nil)
     s)
   (append-ledger! [s fact]
-    (d/transact! conn [{:ledger/seq (count (ledger s)) :ledger/fact (enc fact)}])
+    (d/transact! conn [{:ledger/seq (count (ledger s)) :ledger/fact (ls/enc fact)}])
     fact)
   (with-positions [s positions]
     (when (seq positions) (d/transact! conn (mapv position->tx (vals positions)))) s))
