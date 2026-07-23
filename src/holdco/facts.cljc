@@ -60,7 +60,16 @@
           :required-evidence ["Beteiligungsstrukturoffenlegungsprotokoll (ownership-structure-disclosure-record)"
                               "Nachweis wirtschaftlich Berechtigter (beneficial-ownership-verification-record)"
                               "Ausschüttungsfähigkeitsnachweis (distributable-reserves-certification-record)"
-                              "Ausschüttungsgenehmigungsprotokoll (distribution-authorization-record)"]}})
+                              "Ausschüttungsgenehmigungsprotokoll (distribution-authorization-record)"]}
+   "SGP" {:name "Singapore"
+          :owner-authority "Accounting and Corporate Regulatory Authority (ACRA)"
+          :legal-basis "Companies Act 1967 §403 (dividends payable from profits only) / Part 11A §386AF & §386AN (register of controllers / central register of registrable controllers)"
+          :national-spec "Profits-only restriction on dividend/distribution payments and Register of Registrable Controllers (RORC) beneficial-ownership disclosure and central-filing requirement for companies and LLPs"
+          :provenance "https://www.acra.gov.sg/compliance/register-of-registrable-controllers/"
+          :required-evidence ["Ownership-structure disclosure record"
+                              "Beneficial-ownership verification record"
+                              "Distributable-reserves certification record"
+                              "Distribution authorization record"]}})
 
 (defn spec-basis
   "The jurisdiction's requirement map, or nil -- nil means NO spec-basis,
