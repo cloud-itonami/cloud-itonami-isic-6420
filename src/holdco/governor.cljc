@@ -181,7 +181,17 @@
   [{:keys [op subject]} st]
   (when (= op :actuation/disburse-distribution)
     (let [p (store/position st subject)]
-      (when (registry/distribution-amount-exceeds-distributable-reserves? p)
+      (cond
+        ;; Either figure missing or non-numeric: the limit cannot be
+        ;; evaluated, so it is not "within limits". This used to fall
+        ;; through as "not over" and proceed.
+        ;; Only when the entity EXISTS: a missing entity is a different
+        ;; violation that another gate owns, and firing here would mask it.
+        (and p (not (registry/distribution-amount-exceeds-distributable-reserves-checkable? p)))
+        [{:rule :distribution-exceeds-distributable-reserves
+          :detail "上限判定に必要な値が記録されていない -- 限度内と断定できないため進めない"}]
+
+        (registry/distribution-amount-exceeds-distributable-reserves? p)
         [{:rule :distribution-exceeds-distributable-reserves
           :detail (str subject " の提案分配額(" (:proposed-distribution-amount p)
                       ")が分配可能額(" (:distributable-reserves p) ")を超過")}]))))
