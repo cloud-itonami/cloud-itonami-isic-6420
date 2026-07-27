@@ -59,6 +59,17 @@
   (and (number? proposed-distribution-amount) (number? distributable-reserves)
        (> proposed-distribution-amount distributable-reserves)))
 
+(defn distribution-amount-exceeds-distributable-reserves-checkable?
+  "Are both sides of `distribution-amount-exceeds-distributable-reserves?` actually recorded?
+
+  That predicate answers only `over` / `not over`, and its
+  `(and (number? ...) (number? ...) ...)` guard made every un-recorded
+  case fall through as `not over` -- an entity missing either figure
+  passed the limit check silently. Callers must ask this first:
+  un-checkable is not within limits."
+  [{:keys [proposed-distribution-amount distributable-reserves]}]
+  (boolean (and (number? proposed-distribution-amount) (number? distributable-reserves))))
+
 (defn register-distribution-disbursement
   "Validate + construct the DISTRIBUTION-DISBURSEMENT registration
   DRAFT -- the holding company's own act of disbursing a real
