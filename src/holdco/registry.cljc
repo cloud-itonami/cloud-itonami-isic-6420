@@ -32,7 +32,7 @@
   `holdco.operation`'s `:actuation/disburse-distribution`/`:actuation/
   record-ownership-change`, always human-gated -- see README
   `Actuation`)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn- unsigned-certificate
   "Every certificate this actor produces is UNSIGNED -- signature is the
@@ -86,7 +86,7 @@
     (throw (ex-info "distribution-disbursement: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "distribution-disbursement: sequence must be >= 0" {})))
-  (let [distribution-number (str (str/upper-case jurisdiction) "-DIS-" (zero-pad sequence 6))
+  (let [distribution-number (str (str/upper jurisdiction) "-DIS-" (zero-pad sequence 6))
         record {"record_id" distribution-number
                 "kind" "distribution-disbursement-draft"
                 "position_id" position-id
@@ -110,7 +110,7 @@
     (throw (ex-info "ownership-change: jurisdiction required" {})))
   (when (< sequence 0)
     (throw (ex-info "ownership-change: sequence must be >= 0" {})))
-  (let [change-number (str (str/upper-case jurisdiction) "-OWN-" (zero-pad sequence 6))
+  (let [change-number (str (str/upper jurisdiction) "-OWN-" (zero-pad sequence 6))
         record {"record_id" change-number
                 "kind" "ownership-change-draft"
                 "position_id" position-id
