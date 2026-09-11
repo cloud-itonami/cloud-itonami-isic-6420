@@ -6,10 +6,10 @@ distribution-amount-exceeds-distributable-reserves?` (wrapped for the
 exceeds-distributable-reserves-violations`)'s pure ground-truth
 comparison — does a subsidiary equity position's own recorded proposed
 distribution amount stay within its own recorded distributable-reserves
-ceiling? (see `src/holdco/registry.cljc` lines ~52-60 and `src/holdco/
+ceiling? (see `src/holdco/registry.cljk` lines ~52-60 and `src/holdco/
 governor.cljc` lines ~174-187) — into the minimal `.kotoba` language
 subset, compiled to a real WASM module via `kotoba wasm emit`, and hosted
-via `kototama.tender` (`test/wasm/distributable_reserves_test.clj`).
+via `kototama.tender` (`test/wasm/distributable_reserves_test.cljk`).
 
 This follows the same `kotoba wasm emit` → `kototama.tender` pattern
 already proven by `cloud-itonami-isic-6492`'s `wasm/affordability.kotoba`,

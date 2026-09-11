@@ -3,7 +3,7 @@
   distributable_reserves.kotoba, see wasm/README.md) via kototama.tender --
   proves holdco.governor's distribution-exceeds-distributable-reserves
   check (`distribution-exceeds-distributable-reserves-violations` in
-  src/holdco/governor.cljc, wrapping holdco.registry/distribution-amount-
+  src/holdco/governor.cljk, wrapping holdco.registry/distribution-amount-
   exceeds-distributable-reserves?) runs as a real WASM guest, not just as
   JVM Clojure.
 
