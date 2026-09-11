@@ -1,5 +1,5 @@
 (ns holdco.sim
-  "Demo driver -- `clojure -M:dev:run`. Walks a clean position through
+  "Demo driver -- `kbb -M:dev:run`. Walks a clean position through
   intake -> disclosure verification -> beneficial-ownership screening
   -> distribution-disbursement proposal (always escalates) -> human
   approval -> commit, then through ownership-change-recording proposal
