@@ -1,5 +1,5 @@
 (ns holdco.registry-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [holdco.registry :as r]))
 
 ;; ----------------------------- distribution-amount-exceeds-distributable-reserves? -----------------------------

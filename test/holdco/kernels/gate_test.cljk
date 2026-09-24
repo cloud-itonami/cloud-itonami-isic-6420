@@ -14,7 +14,7 @@
      fail-closed treatment of out-of-range confidence, and the
      distributable-reserves ceiling boundary, exercised through the
      real `holdco.governor/check` façade."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [holdco.facts :as facts]
             [holdco.governor :as governor]
             [holdco.kernels.gate :as gate]
