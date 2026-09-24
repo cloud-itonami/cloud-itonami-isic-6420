@@ -3,7 +3,7 @@
   regress on: `:actuation/disburse-distribution`/`:actuation/record-
   ownership-change` must NEVER be a member of any phase's `:auto`
   set."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [holdco.phase :as phase]))
 
 (deftest disburse-distribution-never-auto-at-any-phase

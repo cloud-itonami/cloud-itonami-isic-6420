@@ -16,7 +16,7 @@
   violation: immediate HOLD, no interrupt, no approval possible. This is
   the same vocabulary-collapse `cloud-itonami-isic-6419` (banking) already
   applies to its own binary verdict space."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [langgraph.graph :as g]
             [holdco.store :as store]
             [holdco.operation :as op]

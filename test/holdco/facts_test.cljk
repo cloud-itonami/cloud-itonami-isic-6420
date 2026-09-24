@@ -1,5 +1,5 @@
 (ns holdco.facts-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [holdco.facts :as facts]))
 
 (deftest known-jurisdictions-have-a-spec-basis
